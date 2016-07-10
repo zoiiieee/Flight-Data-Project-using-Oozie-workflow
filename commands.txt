@@ -1,0 +1,174 @@
+Commands to build oozie:
+
+- Command to build oozie: "bin/mkditro.sh –DskipTests"
+
+- This command should build all the projects included in your oozie source folder and should create a binary distribution of oozie that we will use to install client and server.
+
+- Create a new folder called oozie so that we can move our binary distribution to an individual folder.
+
+- Command to copy the folder to new folder: "cp -R oozie-4.1.0/distro/target/oozie-4.1.0-distro/oozie-4.1.0/ oozie"
+
+- Command to make a new directory into new oozie folder: "mkdir libext"
+
+- Command to copy the hadooplibs to libext:  "cp oozie-4.1.0/hadooplibs/hadooplib-2.3.0.oozie-4.1.0/* libext/"
+
+- Command to update the file in hadoop:  /hadoop/etc/hadoop/core-site.xml 
+
+<property>
+<name>hadoop.proxyuser.ubuntu.hosts</name>
+<value>localhost</value>
+</property>
+<property>
+<name>hadoop.proxyuser.ubuntu.groups</name>
+<value>hadoop</value>
+</property>
+
+- Command to install oozie: "/bin/oozie-setup.sh prepare-war" (to install oozie)
+
+- Create sharelib on HDFS by command "./bin/oozie-setup.sh sharelib create -fs hdfs://localhost:54310"
+This will set up
+setting CATALINA_OPTS="$CATALINA_OPTS -Xmx1024m"
+the destination path for sharelib is: /user/hduser/share/lib
+
+- Command to create the SQL  file  "./bin/ooziedb.sh create -sqlfile oozie.sql –run"
+
+- Command to start oozie:  "./bin/oozied.sh start"
+
+- Command to run oozie:  "./bin/oozied.sh run"
+
+- Command to check the status of Oozie: "./bin/oozie admin -oozie http://localhost:11000/oozie -status"
+
+					``````
+
+Commands used to run code on pseudo and fully distributed node:
+
+Step by step instruction.
+
+- Launch an instance that is Amazon Linux AMI.
+
+- Now we see new instance under instances section on AWS.
+
+- Using its public dns log in to that instance into putty.
+
+- Check java version by giving command 
+    "java -version".
+
+- Install hadoop having latest version of hadoop-2.6.1 and unzip that hadoop using command "tar -zxvf hadoop-2.6.1.tar.gz".
+
+- Install oozie having latest version of oozie-4.1.0 and unzip it using "tar -zxvf oozie-4.1.0.tar.gz"
+ 
+- Install maven having latest version of apache maven 3.3.3 and unzip it using "tar -zxvf  apache-maven-3.3.3.tar.gz"
+
+				`````
+
+Commands for fully distributed mode:  
+
+- When you launch an instance of Amazon Linux make sure that you launch 2 instances for cluster setup.
+
+- Do the same procedure as you did in single or pseudo mode.
+
+- Name each instance as first as namenode and other as slavenode.
+
+- Launch every instance using putty and check the IP addresses by giving command "ifconfig" and note down the ip addresses of each instance. 
+
+- Modify the hostname by giving command "sudo hostname public-dns" on every instance.
+
+- To modify it permanently change settings by going into 
+    "sudo vi /etc/hosts".
+    Add there "private ip" address and you "public dns".
+
+- Add .pem file to every instance to "/home/ubuntu" using command line or using filezilla you can directly transfer to it.
+    
+- Check java version by giving command 
+    "java -version".
+
+- Change the hadoop name by 
+    "mv hadoop-2.6.1 hadoop".
+
+				`````` 
+
+To change the confid settings:
+
+- Set up the environment for ubuntu user by going to bash file.
+    Give command vi .bashrc and in that at the end of file set and after that save it by :wq.
+    export HADOOP_CONF=/home/ubuntu/hadoop/conf
+    export HADOOP_PREFIX=/home/ubuntu/hadoop
+    export JAVA_HOME=/usr/lib/jvm/java-7-oracle
+    export PATH=$PATH:$HADOOP_PREFIX/bin
+
+- Give commands to check.
+    source ~/.bashrc
+    echo $HADOOP_PREFIX
+    echo $HADOOP_CONF
+
+- Add the .pem file to ssh by giving command 
+    chmod 644 .ssh/authorized_keys
+    chmod 400 .pem file
+    eval `ssh-agent -s`
+    ssh-add .pem file
+
+				``````
+
+Changing the config of Hadoop:
+
+- Go to cd hadoop/etc/hadoop. In that change the configurations of hadoop-env.sh, core-site.xml, hdfs-site.xml, mapred-site.xml.template and save all the     configurations by giving command wq.
+    Set java_home in hadoop-env.sh by export JAVA_HOME=/usr/lib/jvm/java-7-oracle
+    
+- Change the  configurations core-site.xml :- but befor that make temporary directory to home by command "mkdir hdfstmp"
+
+<configuration>
+<property>
+<name>fs.default.name</name>
+<value>hdfs://public dns:8020</value>
+</property>
+<property>
+<name>hadoop.tmp.dir</name>
+<value>/home/ubuntu/hdfstmp</value>
+</property>
+</configuration> 
+
+- Change the configurations of hdfs-site.xml
+
+<configuration>
+<property>
+<name>dfs.replication</name>
+<value>2</value>
+</property>
+<property>
+<name>dfs.permissions</name>
+<value>false</value>
+</property>
+</configuration>
+
+- Change the configuations of mapred-site.xml.template
+
+<configuration>
+<property>
+<name>mapred.job.tracker</name>
+<value>hdfs://public dns:8021</value>
+</property>
+</configuration>
+
+- Copy all these configurations settings to your slaves node using command 
+"scp hadoop-env.sh core-site.xml hdfs-site.xml mapred-site.xml.template ubuntu@public dns:/home/ubuntu/hadoop/etc/hadoop" one by one.
+
+- Change the masters and slaves file by giving the public dns according to their public dns.
+
+					``````
+
+To run the datanodes and the namemodes:
+
+- After doing these things format the files by giving command 
+    "hdfs namenode -format" 
+    "hdfs datanode -format".
+
+- Go to cd hadoop in that "sbin/start-dfs.sh". After that give command "jps". That will show you namenode and datanodes running on instance. 
+
+- Pass your input file to /user/ubuntu by command "hdfs dfs -mkdir /user" -> "hdfs dfs -mkdir /user/ubuntu" 
+
+- Put your input into that by "hdfs dfs -put input input1"
+
+- To run your program use the command  "hadoop jar ccproject14.jar ccproject.airlines input output1 output2 output3"
+
+- To check your output use the command "Hadoop fs –cat output1/part-r-00000" for different outputs.
+
